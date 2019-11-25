@@ -8,6 +8,7 @@ class GlApp {
             alert('Unable to initialize WebGL 2. Your browser may not support it.');
         }
 
+		//MAIN PROGRAM MODEL VERTEX ARRAY OBJECT ATTRIBUTES
         this.scene = scene;
         this.algorithm = 'gouraud'
         this.shader = {gouraud_color: null, gouraud_texture: null,
@@ -16,10 +17,16 @@ class GlApp {
         this.vertex_normal_attrib = 1;
         this.vertex_texcoord_attrib = 2;
 
+		//SMASHES DRAWING FLAT ON SCREEN (3D -> 2D)
         this.projection_matrix = glMatrix.mat4.create();
-        this.view_matrix = glMatrix.mat4.create();
+        
+		//CAMERA LOCATION
+		this.view_matrix = glMatrix.mat4.create();
+		
+		//MODEL LOCATION
         this.model_matrix = glMatrix.mat4.create();
 
+		//Stores 3 Different Models
         this.vertex_array = {plane: null, cube: null, sphere: null};
 
         let gouraud_color_vs = this.GetFile('shaders/gouraud_color.vert');
@@ -43,6 +50,8 @@ class GlApp {
     InitializeGlApp() {
         this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
         this.gl.clearColor(0.8, 0.8, 0.8, 1.0);
+		
+		//Enabling z-buffer
         this.gl.enable(this.gl.DEPTH_TEST);
 
         this.vertex_array.plane = CreatePlaneVao(this);
@@ -57,6 +66,8 @@ class GlApp {
         let cam_target = glMatrix.vec3.create();
         let cam_up = this.scene.camera.up;
         glMatrix.vec3.add(cam_target, cam_pos, this.scene.camera.direction);
+		
+		//Sets VRP and VPN
         glMatrix.mat4.lookAt(this.view_matrix, cam_pos, cam_target, cam_up);
 
         this.Render();
@@ -80,25 +91,64 @@ class GlApp {
     }
 
     Render() {
+//--------------------------------------------------------------------------------------------------------//		
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         
-        // draw all models --> note you need to properly select shader here
+        // draw all models --> note you need to properly select shader here***********************************
         for (let i = 0; i < this.scene.models.length; i ++) {
-            this.gl.useProgram(this.shader['emissive'].program);
+			
+			//SHADER WILL BE SELECTED AND DETERMINED HERE
+			//USE CONDITIONAL????
+		//-----------------------------------------//
+		
+		var shaderToUse = this.algorithm + "_" +  this.scene.models[i].shader
 
+		//-----------------------------------------//
+					
+			//What shader we will use -> depends on this.algorithm and shader type
+					this.gl.useProgram(this.shader[shaderToUse].program);
+			
+			//Projection matrix
+				//---Camera stuff
+				
+			//View Matrix
+				//---World view to canonical
+
+			//Building model matrix (below)
+				//---How we are transforming the model
             glMatrix.mat4.identity(this.model_matrix);
             glMatrix.mat4.translate(this.model_matrix, this.model_matrix, this.scene.models[i].center);
             glMatrix.mat4.scale(this.model_matrix, this.model_matrix, this.scene.models[i].size);
 
-            this.gl.uniform3fv(this.shader['emissive'].uniform.material, this.scene.models[i].material.color);
-            this.gl.uniformMatrix4fv(this.shader['emissive'].uniform.projection, false, this.projection_matrix);
-            this.gl.uniformMatrix4fv(this.shader['emissive'].uniform.view, false, this.view_matrix);
-            this.gl.uniformMatrix4fv(this.shader['emissive'].uniform.model, false, this.model_matrix);
+			//Passing information to graphics card
+			//Color
+            this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_col, this.scene.models[i].material.color);
+			
+			//Projection matrix
+            this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.projection, false, this.projection_matrix);
+			
+			//View matrix
+            this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.view, false, this.view_matrix);
+			
+			//Model Matrix
+            this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.model, false, this.model_matrix);
+
+			//Ambient Light
+			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_ambient, this.scene.light.ambient);
+			
+			//Light Color
+			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_col, this.scene.light.point_lights[0].color);
+			
+			//Light Position
+			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_pos, this.scene.light.point_lights[0].position);
+
 
             this.gl.bindVertexArray(this.vertex_array[this.scene.models[i].type]);
             this.gl.drawElements(this.gl.TRIANGLES, this.vertex_array[this.scene.models[i].type].face_index_count, this.gl.UNSIGNED_SHORT, 0);
             this.gl.bindVertexArray(null);
         }
+		
+//--------------------------------------------------------------------------------------------------------//
 
         // draw all light sources
         for (let i = 0; i < this.scene.light.point_lights.length; i ++) {

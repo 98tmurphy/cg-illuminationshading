@@ -20,4 +20,6 @@ out vec3 specular;
 
 void main() {
     gl_Position = projection_matrix * view_matrix * model_matrix * vec4(vertex_position, 1.0);
+	ambient = light_ambient;
+	diffuse = light_color*clamp((dot(vertex_normal, normalize(light_position-vertex_position))), 0.0, 1.0);
 }
