@@ -127,19 +127,19 @@ class GlApp {
 			//Projection matrix
             this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.projection, false, this.projection_matrix);
 			
-			//View matrix
+			//View matrix (
             this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.view, false, this.view_matrix);
 			
-			//Model Matrix
+			//Model Matrix (model_matrix)
             this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.model, false, this.model_matrix);
 
-			//Ambient Light
+			//Ambient Light (light_ambient)
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_ambient, this.scene.light.ambient);
 			
-			//Light Color
+			//Light Color (light_color)
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_col, this.scene.light.point_lights[0].color);
 			
-			//Light Position
+			//Light Position (light_position)
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_pos, this.scene.light.point_lights[0].position);
 
 
