@@ -73,9 +73,10 @@ class GlApp {
         this.Render();
     }
 
+	//Updated Texture
     InitializeTexture(image_url) {
         // create a texture, and upload a temporary 1px white RGBA array [255,255,255,255]
-        let texture;
+        let texture = this.gl.createTexture();
 
         // load the actual image
         let image = new Image();
@@ -84,6 +85,8 @@ class GlApp {
             this.UpdateTexture(texture, image);
         }, false);
         image.src = image_url;
+		
+		return texture;
     }
 
     UpdateTexture(texture, image_element) {
@@ -124,6 +127,9 @@ class GlApp {
 			//Color
             this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_col, this.scene.models[i].material.color);
 			
+			//Material_specular
+			this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_spec, this.scene.models[i].material.specular);
+			
 			//Projection matrix
             this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.projection, false, this.projection_matrix);
 			
@@ -142,6 +148,12 @@ class GlApp {
 			//Light Position (light_position)
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_pos, this.scene.light.point_lights[0].position);
 
+		//Specular Imports	
+			//Material Shininess
+			this.gl.uniform1f(this.shader[shaderToUse].uniform.shininess, this.scene.models[i].material.shininess);
+			
+			//Camera Position
+			this.gl.uniform3fv(this.shader[shaderToUse].uniform.camera_pos, this.scene.camera.position);
 
             this.gl.bindVertexArray(this.vertex_array[this.scene.models[i].type]);
             this.gl.drawElements(this.gl.TRIANGLES, this.vertex_array[this.scene.models[i].type].face_index_count, this.gl.UNSIGNED_SHORT, 0);

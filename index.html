@@ -37,7 +37,7 @@
                             type: 'cube',
                             shader: 'color',
                             material: {
-                                color: glMatrix.vec3.fromValues(0.1, 0.4, 0.9),  // red, green, blue
+                                color: glMatrix.vec3.fromValues(0.0, 0.0, 1.0),  // red, green, blue
                                 specular: glMatrix.vec3.fromValues(1.0, 1.0, 1.0),  // red, green, blue
                                 shininess: 32
                             },
@@ -100,6 +100,8 @@
                         m.texture.url = new_scene.models[i].texture.url;
                         m.texture.scale = glMatrix.vec2.fromValues(new_scene.models[i].texture.scale[0],
                                                                    new_scene.models[i].texture.scale[1]);
+						//Added line (below)
+						m.texture.id = glapp.InitializeTexture(m.texture.url)
                     }
                     scene.models.push(m);
                 }
