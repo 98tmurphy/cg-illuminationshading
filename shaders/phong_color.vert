@@ -16,7 +16,8 @@ out vec3 frag_normal;
 //TO-DO: Calculate Ambient and 
 void main() {
     gl_Position = projection_matrix * view_matrix * model_matrix * vec4(vertex_position, 1.0);
-	
+	mat3 normal_model_matrix = inverse(transpose(mat3(model_matrix)));
+
 	frag_pos = vec3(model_matrix * vec4(vertex_position, 1.0));
 	frag_normal = normalize(normal_model_matrix * vertex_normal);
 	
