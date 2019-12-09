@@ -73,11 +73,26 @@ class GlApp {
         this.Render();
     }
 
+//--------------------------------------------------------------------------------------------------------//	
+	//Texture Manipulation
+	
 	//Updated Texture
     InitializeTexture(image_url) {
         // create a texture, and upload a temporary 1px white RGBA array [255,255,255,255]
         let texture = this.gl.createTexture();
 
+		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_NEAREST);
+		
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
+
+		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255,255,255,255]));
+		
+		//gl.generateMipmap(gl.TEXTURE_2D);
+		this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+		
         // load the actual image
         let image = new Image();
         image.crossOrigin = 'anonymous';
@@ -85,31 +100,39 @@ class GlApp {
             this.UpdateTexture(texture, image);
         }, false);
         image.src = image_url;
-		
+				
 		return texture;
     }
 
     UpdateTexture(texture, image_element) {
-
+			
+		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image_element);
+		
+		this.gl.generateMipmap(this.gl.TEXTURE_2D);
+		this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+		this.Render();
     }
-
+	
+	//END
+//--------------------------------------------------------------------------------------------------------//	
+	//Shader Manipulation/Functions
+	
     Render() {
-//--------------------------------------------------------------------------------------------------------//		
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         
-        // draw all models --> note you need to properly select shader here***********************************
+        // draw all models --> note you need to properly select shader here
         for (let i = 0; i < this.scene.models.length; i ++) {
 			
 			//SHADER WILL BE SELECTED AND DETERMINED HERE
-			//USE CONDITIONAL????
-		//-----------------------------------------//
-		
-		var shaderToUse = this.algorithm + "_" +  this.scene.models[i].shader
+			//-----------------------------------------//
+			
+			var shaderToUse = this.algorithm + "_" +  this.scene.models[i].shader
 
-		//-----------------------------------------//
+			//-----------------------------------------//
 					
 			//What shader we will use -> depends on this.algorithm and shader type
-					this.gl.useProgram(this.shader[shaderToUse].program);
+			this.gl.useProgram(this.shader[shaderToUse].program);
 			
 			//Projection matrix
 				//---Camera stuff
@@ -122,44 +145,66 @@ class GlApp {
             glMatrix.mat4.identity(this.model_matrix);
             glMatrix.mat4.translate(this.model_matrix, this.model_matrix, this.scene.models[i].center);
             glMatrix.mat4.scale(this.model_matrix, this.model_matrix, this.scene.models[i].size);
-
+			
 			//Passing information to graphics card
+			
+			//Texture_scale ('texture' Models only)
+					if(this.scene.models[i].shader == 'texture') {
+						this.gl.uniform2fv(this.shader[shaderToUse].uniform.tex_scale, this.scene.models[i].texture.scale);
+						
+						this.gl.activeTexture(this.gl.TEXTURE0);
+						this.gl.bindTexture(this.gl.TEXTURE_2D, this.scene.models[i].texture.id);
+						this.gl.uniform1i(this.shader[shaderToUse].uniform.image, 0);
+					}
+			
 			//Color
-            this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_col, this.scene.models[i].material.color);
+			this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_col, this.scene.models[i].material.color);
 			
 			//Material_specular
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_spec, this.scene.models[i].material.specular);
 			
 			//Projection matrix
-            this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.projection, false, this.projection_matrix);
-			
+			this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.projection, false, this.projection_matrix);
+
 			//View matrix (
-            this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.view, false, this.view_matrix);
+			this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.view, false, this.view_matrix);
 			
 			//Model Matrix (model_matrix)
-            this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.model, false, this.model_matrix);
+			this.gl.uniformMatrix4fv(this.shader[shaderToUse].uniform.model, false, this.model_matrix);
 
 			//Ambient Light (light_ambient)
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_ambient, this.scene.light.ambient);
 			
+					/*var length = this.scene.light.point_lights.length;
+					var lightColor = new Array(16);
+					var lightPosition = new Array(16);
+					for(let j = 0; j < length; j++){
+						lightColor.push(this.scene.light.point_lights[j].color);
+						lightColor.push(this.scene.light.point_lights[j].position);
+					}
+					console.log("Hi!");*/
+					
 			//Light Color (light_color)
+			//this.scene.light.point_lights[0].color
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_col, this.scene.light.point_lights[0].color);
 			
 			//Light Position (light_position)
+			//this.scene.light.point_lights[0].position
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_pos, this.scene.light.point_lights[0].position);
-
-		//Specular Imports	
+			
+			//Specular Imports------(Below)----------//	
 			//Material Shininess
 			this.gl.uniform1f(this.shader[shaderToUse].uniform.shininess, this.scene.models[i].material.shininess);
 			
 			//Camera Position
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.camera_pos, this.scene.camera.position);
-
-            this.gl.bindVertexArray(this.vertex_array[this.scene.models[i].type]);
-            this.gl.drawElements(this.gl.TRIANGLES, this.vertex_array[this.scene.models[i].type].face_index_count, this.gl.UNSIGNED_SHORT, 0);
-            this.gl.bindVertexArray(null);
+			
+			this.gl.bindVertexArray(this.vertex_array[this.scene.models[i].type]);
+			this.gl.drawElements(this.gl.TRIANGLES, this.vertex_array[this.scene.models[i].type].face_index_count, this.gl.UNSIGNED_SHORT, 0);
+			this.gl.bindVertexArray(null);
         }
 		
+		//END
 //--------------------------------------------------------------------------------------------------------//
 
         // draw all light sources
@@ -250,7 +295,7 @@ class GlApp {
         let shininess_uniform = this.gl.getUniformLocation(program, 'material_shininess');
         let projection_uniform = this.gl.getUniformLocation(program, 'projection_matrix');
         let view_uniform = this.gl.getUniformLocation(program, 'view_matrix');
-        let model_uniform = this.gl.getUniformLocation(program, 'model_matrix');
+        let model_uniform = this.gl.getUniformLocation(program, 'model_matrix');999999
 
         this.shader[program_name] = {
             program: program,

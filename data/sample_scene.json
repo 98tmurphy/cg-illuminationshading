@@ -9,12 +9,12 @@
             "type": "plane",
             "shader": "texture",
             "material": {
-                "color": [1.0, 1.0, 1.0],
+                "color": [1.0, 0.0, 0.0],
                 "specular": [0.0, 0.0, 0.0],
                 "shininess": 1
             },
             "texture": {
-                "url": "images/Checker.jpg",
+                "url": "images/Checkered.jpg",
                 "scale": [4, 4]
             },
             "center": [0.0, 0.0, 0.0],
