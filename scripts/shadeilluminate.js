@@ -149,13 +149,13 @@ class GlApp {
 			//Passing information to graphics card
 			
 			//Texture_scale ('texture' Models only)
-					if(this.scene.models[i].shader == 'texture') {
-						this.gl.uniform2fv(this.shader[shaderToUse].uniform.tex_scale, this.scene.models[i].texture.scale);
-						
-						this.gl.activeTexture(this.gl.TEXTURE0);
-						this.gl.bindTexture(this.gl.TEXTURE_2D, this.scene.models[i].texture.id);
-						this.gl.uniform1i(this.shader[shaderToUse].uniform.image, 0);
-					}
+			if(this.scene.models[i].shader == 'texture') {
+				this.gl.uniform2fv(this.shader[shaderToUse].uniform.tex_scale, this.scene.models[i].texture.scale);
+				
+				this.gl.activeTexture(this.gl.TEXTURE0);
+				this.gl.bindTexture(this.gl.TEXTURE_2D, this.scene.models[i].texture.id);
+				this.gl.uniform1i(this.shader[shaderToUse].uniform.image, 0);
+			}
 			
 			//Color
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.material_col, this.scene.models[i].material.color);
@@ -175,22 +175,19 @@ class GlApp {
 			//Ambient Light (light_ambient)
 			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_ambient, this.scene.light.ambient);
 			
-					/*var length = this.scene.light.point_lights.length;
-					var lightColor = new Array(16);
-					var lightPosition = new Array(16);
-					for(let j = 0; j < length; j++){
-						lightColor.push(this.scene.light.point_lights[j].color);
-						lightColor.push(this.scene.light.point_lights[j].position);
-					}
-					console.log("Hi!");*/
-					
-			//Light Color (light_color)
-			//this.scene.light.point_lights[0].color
-			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_col, this.scene.light.point_lights[0].color);
+			//Light Amount
+			var length = this.scene.light.point_lights.length;
+			this.gl.uniform1i(this.shader[shaderToUse].uniform.light_amount, length);
 			
-			//Light Position (light_position)
-			//this.scene.light.point_lights[0].position
-			this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_pos, this.scene.light.point_lights[0].position);
+			for(let j = 0; j < length ; j++){
+				//Light Color (light_color)
+				//this.scene.light.point_lights[0].color
+				this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_col[j], this.scene.light.point_lights[j].color);
+				
+				//Light Position (light_position)
+				//this.scene.light.point_lights[0].position
+				this.gl.uniform3fv(this.shader[shaderToUse].uniform.light_pos[j], this.scene.light.point_lights[j].position);
+			}
 			
 			//Specular Imports------(Below)----------//	
 			//Material Shininess
@@ -287,15 +284,20 @@ class GlApp {
         this.LinkShaderProgram(program);
 
         let light_ambient_uniform = this.gl.getUniformLocation(program, 'light_ambient');
-		let light_pos_uniform = this.gl.getUniformLocation(program, 'light_position');
-        let light_col_uniform = this.gl.getUniformLocation(program, 'light_color');
+		let light_pos_uniform = []; 
+		let light_col_uniform = [];
+		for(let i = 0; i < 10; i++) {
+			light_pos_uniform.push(this.gl.getUniformLocation(program, 'light_position[' + i + "]"));
+			light_col_uniform.push(this.gl.getUniformLocation(program, 'light_color[' + i + "]")); 
+		}
         let camera_pos_uniform = this.gl.getUniformLocation(program, 'camera_position');
         let material_col_uniform = this.gl.getUniformLocation(program, 'material_color');
         let material_spec_uniform = this.gl.getUniformLocation(program, 'material_specular');
         let shininess_uniform = this.gl.getUniformLocation(program, 'material_shininess');
         let projection_uniform = this.gl.getUniformLocation(program, 'projection_matrix');
         let view_uniform = this.gl.getUniformLocation(program, 'view_matrix');
-        let model_uniform = this.gl.getUniformLocation(program, 'model_matrix');999999
+        let model_uniform = this.gl.getUniformLocation(program, 'model_matrix');
+		let light_amount_uniform = this.gl.getUniformLocation(program, 'light_amount');
 
         this.shader[program_name] = {
             program: program,
@@ -309,7 +311,8 @@ class GlApp {
                 shininess: shininess_uniform,
                 projection: projection_uniform,
                 view: view_uniform,
-                model: model_uniform
+                model: model_uniform,
+				light_amount: light_amount_uniform
             }
         };
     }
@@ -328,8 +331,12 @@ class GlApp {
         this.LinkShaderProgram(program);
 
 		let light_ambient_uniform = this.gl.getUniformLocation(program, 'light_ambient');
-        let light_pos_uniform = this.gl.getUniformLocation(program, 'light_position');
-        let light_col_uniform = this.gl.getUniformLocation(program, 'light_color');
+		let light_pos_uniform = []; 
+		let light_col_uniform = [];
+		for(let i = 0; i < 10; i++) {
+			light_pos_uniform.push(this.gl.getUniformLocation(program, 'light_position[' + i + "]"));
+			light_col_uniform.push(this.gl.getUniformLocation(program, 'light_color[' + i + "]")); 
+		}
         let camera_pos_uniform = this.gl.getUniformLocation(program, 'camera_position');
         let material_col_uniform = this.gl.getUniformLocation(program, 'material_color');
         let material_spec_uniform = this.gl.getUniformLocation(program, 'material_specular');
@@ -339,6 +346,7 @@ class GlApp {
         let projection_uniform = this.gl.getUniformLocation(program, 'projection_matrix');
         let view_uniform = this.gl.getUniformLocation(program, 'view_matrix');
         let model_uniform = this.gl.getUniformLocation(program, 'model_matrix');
+		let light_amount_uniform = this.gl.getUniformLocation(program, 'light_amount');
 
         this.shader[program_name] = {
             program: program,
@@ -354,7 +362,8 @@ class GlApp {
                 shininess: shininess_uniform,
                 projection: projection_uniform,
                 view: view_uniform,
-                model: model_uniform
+                model: model_uniform,
+				light_amount: light_amount_uniform
             }
         };
     }
